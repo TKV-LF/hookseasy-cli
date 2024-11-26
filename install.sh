@@ -1,77 +1,81 @@
 #!/bin/bash
 
-# Exit on any error
-set -e
+# Variables for your GitHub repository
+REPO="TKV-LF/tunnel-client-binaries"
+BINARY_NAME="tunnel"
 
-# Base URL of the GitHub release
-BASE_URL="https://github.com/TKV-LF/tunnel-client-binaries/releases"
+# Function to determine the OS and Architecture
+detect_platform() {
+  local unameOut="$(uname -s)"
+  local arch="$(uname -m)"
+  
+  case "${unameOut}" in
+    Linux*)     os="linux";;
+    Darwin*)    os="darwin";;
+    CYGWIN*|MINGW*|MSYS*|Windows_NT*) os="windows";;
+    *)          os="unknown";;
+  esac
 
-# Detect OS and architecture
-OS=$(uname | tr '[:upper:]' '[:lower:]')
-ARCH=$(uname -m)
+  case "${arch}" in
+    x86_64)     arch="amd64";;
+    arm64|aarch64) arch="arm64";;
+    *)          arch="unknown";;
+  esac
 
-# Map architecture to standard names
-if [[ "$ARCH" == "x86_64" ]]; then
-    ARCH="amd64"
-elif [[ "$ARCH" == "arm64" || "$ARCH" == "aarch64" ]]; then
-    ARCH="arm64"
-else
-    echo "Unsupported architecture: $ARCH"
+  if [[ "$os" == "unknown" || "$arch" == "unknown" ]]; then
+    echo "Unsupported platform: $unameOut / $arch"
     exit 1
+  fi
+
+  echo "${os}-${arch}"
+}
+
+# Parse arguments
+TOKEN=""
+FORWARD_PORT=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --token)
+      TOKEN="$2"
+      shift 2
+      ;;
+    --forward-port)
+      FORWARD_PORT="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown option: $1"
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -z "$TOKEN" || -z "$FORWARD_PORT" ]]; then
+  echo "Usage: $0 --token <TOKEN> --forward-port <PORT>"
+  exit 1
 fi
 
-# Map Darwin to macOS
-if [[ "$OS" == "darwin" ]]; then
-    OS="darwin"
-elif [[ "$OS" == "linux" ]]; then
-    OS="linux"
-elif [[ "$OS" == "mingw"* || "$OS" == "cygwin"* ]]; then
-    OS="windows"
-else
-    echo "Unsupported operating system: $OS"
-    exit 1
+# Detect platform and architecture
+PLATFORM=$(detect_platform)
+FILENAME="${BINARY_NAME}-${PLATFORM}"
+
+if [[ "$PLATFORM" == *"windows"* ]]; then
+  FILENAME="${FILENAME}.exe"
 fi
 
-# Construct the file name for the release archive
-ARCHIVE="tunnel-client-binaires-public.tar.gz"
+# Download the binary
+echo "Downloading the binary for ${PLATFORM}..."
+DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${FILENAME}"
+curl -L -o "${BINARY_NAME}" "${DOWNLOAD_URL}"
 
-# Download the archive
-echo "Downloading the binary archive..."
-curl -sSL "${BASE_URL}/${ARCHIVE}" -o "${ARCHIVE}"
-
-# Extract the archive
-echo "Extracting the archive..."
-tar -xzf "${ARCHIVE}"
-
-# Determine the binary name
-BINARY="tunnel-${OS}-${ARCH}"
-if [[ "$OS" == "windows" ]]; then
-    BINARY="${BINARY}.exe"
+if [[ $? -ne 0 ]]; then
+  echo "Failed to download the binary from ${DOWNLOAD_URL}"
+  exit 1
 fi
 
-# Verify the binary exists
-if [[ ! -f "$BINARY" ]]; then
-    echo "Binary not found for your platform: ${BINARY}"
-    exit 1
-fi
+# Make the binary executable
+chmod +x "${BINARY_NAME}"
 
-# Move the binary to the current directory
-mv "$BINARY" ./tunnel
-
-# Clean up extracted files and archive
-rm -rf tunnel-* "$ARCHIVE"
-
-# Ensure token and target URL are provided
-TOKEN=$1
-TARGET_URL=$2
-if [[ -z "$TOKEN" || -z "$TARGET_URL" ]]; then
-    echo "Usage: curl -sSL <install.sh URL> | bash -s <token> <target_url>"
-    exit 1
-fi
-
-# Ensure the binary is executable
-chmod +x tunnel
-
-# Run the binary
-echo "Running the tunnel..."
-./tunnel -token "$TOKEN" -t "$TARGET_URL"
+# Run the binary with the provided arguments
+echo "Running the binary with --token and --forward-port..."
+./${BINARY_NAME} --token="${TOKEN}" --forward-port="${FORWARD_PORT}"
