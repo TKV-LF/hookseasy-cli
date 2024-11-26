@@ -33,7 +33,7 @@ else
 fi
 
 # Construct the file name for the release archive
-ARCHIVE="source-code.tar.gz"
+ARCHIVE="tunnel-client-binaires-public.tar.gz"
 
 # Download the archive
 echo "Downloading the binary archive..."
