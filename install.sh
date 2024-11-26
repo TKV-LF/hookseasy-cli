@@ -4,7 +4,7 @@
 set -e
 
 # Base URL of the GitHub release
-BASE_URL="https://github.com/TKV-LF/tunnel-client-binaries/releases/latest/download"
+BASE_URL="https://github.com/TKV-LF/tunnel-client-binaries/releases/latest"
 
 # Detect OS and architecture
 OS=$(uname | tr '[:upper:]' '[:lower:]')
