@@ -1,48 +1,81 @@
 #!/bin/bash
 
-# Define the platform and architecture
-ARCH=$(uname -m)
-OS=$(uname)
+# Variables for your GitHub repository
+REPO="TKV-LF/tunnel-client-binaries"
+BINARY_NAME="tunnel"
 
-# Determine binary URL based on platform and architecture
-BINARY_URL=""
-if [[ "$OS" == "Darwin" && "$ARCH" == "x86_64" ]]; then
-    BINARY_URL="https://github.com/TKV-LF/tunnel-client-binaries/releases/download/latest/tunnel-darwin-amd64"
-elif [[ "$OS" == "Darwin" && "$ARCH" == "arm64" ]]; then
-    BINARY_URL="https://github.com/TKV-LF/tunnel-client-binaries/releases/download/latest/tunnel-darwin-arm64"
-elif [[ "$OS" == "Linux" && "$ARCH" == "x86_64" ]]; then
-    BINARY_URL="https://github.com/TKV-LF/tunnel-client-binaries/releases/download/latest/tunnel-linux-amd64"
-elif [[ "$OS" == "Linux" && "$ARCH" == "aarch64" ]]; then
-    BINARY_URL="https://github.com/TKV-LF/tunnel-client-binaries/releases/download/latest/tunnel-linux-arm64"
-elif [[ "$OS" == "MINGW64_NT" && "$ARCH" == "x86_64" ]]; then
-    BINARY_URL="https://github.com/TKV-LF/tunnel-client-binaries/releases/download/latest/tunnel-windows-amd64.exe"
-elif [[ "$OS" == "MINGW64_NT" && "$ARCH" == "aarch64" ]]; then
-    BINARY_URL="https://github.com/TKV-LF/tunnel-client-binaries/releases/download/latest/tunnel-windows-arm64.exe"
-else
-    echo "Unsupported platform: $OS $ARCH"
+# Function to determine the OS and Architecture
+detect_platform() {
+  local unameOut="$(uname -s)"
+  local arch="$(uname -m)"
+  
+  case "${unameOut}" in
+    Linux*)     os="linux";;
+    Darwin*)    os="darwin";;
+    CYGWIN*|MINGW*|MSYS*|Windows_NT*) os="windows";;
+    *)          os="unknown";;
+  esac
+
+  case "${arch}" in
+    x86_64)     arch="amd64";;
+    arm64|aarch64) arch="arm64";;
+    *)          arch="unknown";;
+  esac
+
+  if [[ "$os" == "unknown" || "$arch" == "unknown" ]]; then
+    echo "Unsupported platform: $unameOut / $arch"
     exit 1
+  fi
+
+  echo "${os}-${arch}"
+}
+
+# Parse arguments
+TOKEN=""
+URL=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --token)
+      TOKEN="$2"
+      shift 2
+      ;;
+    --r)
+      URL="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown option: $1"
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -z "$TOKEN" || -z "$URL" ]]; then
+  echo "Usage: $0 --token <TOKEN> --r <ỦL>"
+  exit 1
+fi
+
+# Detect platform and architecture
+PLATFORM=$(detect_platform)
+FILENAME="${BINARY_NAME}-${PLATFORM}"
+
+if [[ "$PLATFORM" == *"windows"* ]]; then
+  FILENAME="${FILENAME}.exe"
 fi
 
 # Download the binary
-echo "Downloading tunnel client for $OS $ARCH..."
-curl -L $BINARY_URL -o tunnel-client
+echo "Downloading the binary for ${PLATFORM}..."
+DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${FILENAME}"
+curl -L -o "${BINARY_NAME}" "${DOWNLOAD_URL}"
+
+if [[ $? -ne 0 ]]; then
+  echo "Failed to download the binary from ${DOWNLOAD_URL}"
+  exit 1
+fi
 
 # Make the binary executable
-chmod +x tunnel-client
-
-# Check if the binary is executable
-if [[ ! -x ./tunnel-client ]]; then
-    echo "Failed to make the binary executable."
-    exit 1
-fi
+chmod +x "${BINARY_NAME}"
 
 # Run the binary with the provided arguments
-echo "Running tunnel client..."
-
-# Check if 'token' and 'target-host' arguments are passed
-if [[ $# -lt 4 ]]; then
-    echo "Usage: curl -sSL https://tkv-lf.github.io/tunnel-client-binaries/install.sh | bash -s -- --token <your_token> --r <target_host>"
-    exit 1
-fi
-
-./tunnel-client "$@"
+echo "Running the binary with --token and --r..."
+./${BINARY_NAME} --token="${TOKEN}" --r="${URL}"
