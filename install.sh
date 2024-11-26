@@ -51,7 +51,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$TOKEN" || -z "$URL" ]]; then
-  echo "Usage: $0 --token <TOKEN> --r <ỦL>"
+  echo "Usage: $0 --token <TOKEN> --r <URL>"
   exit 1
 fi
 
