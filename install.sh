@@ -10,6 +10,7 @@ BASE_URL="https://github.com/TKV-LF/tunnel-client-binaries/releases/latest"
 OS=$(uname | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m)
 
+# Map architecture to standard names
 if [[ "$ARCH" == "x86_64" ]]; then
     ARCH="amd64"
 elif [[ "$ARCH" == "arm64" || "$ARCH" == "aarch64" ]]; then
@@ -31,28 +32,34 @@ else
     exit 1
 fi
 
-# Construct the file name
-ARCHIVE="tunnel-${OS}-${ARCH}"
-if [[ "$OS" == "windows" ]]; then
-    ARCHIVE="${ARCHIVE}.zip"
-else
-    ARCHIVE="${ARCHIVE}.tar.gz"
-fi
+# Construct the file name for the release archive
+ARCHIVE="source-code.tar.gz"
 
 # Download the archive
-echo "Downloading the tunnel binary archive for ${OS}-${ARCH}..."
+echo "Downloading the binary archive..."
 curl -sSL "${BASE_URL}/${ARCHIVE}" -o "${ARCHIVE}"
 
 # Extract the archive
 echo "Extracting the archive..."
-if [[ "$ARCHIVE" == *.zip ]]; then
-    unzip -o "${ARCHIVE}" -d .
-else
-    tar -xzf "${ARCHIVE}"
+tar -xzf "${ARCHIVE}"
+
+# Determine the binary name
+BINARY="tunnel-${OS}-${ARCH}"
+if [[ "$OS" == "windows" ]]; then
+    BINARY="${BINARY}.exe"
 fi
 
-# Clean up
-rm -f "${ARCHIVE}"
+# Verify the binary exists
+if [[ ! -f "$BINARY" ]]; then
+    echo "Binary not found for your platform: ${BINARY}"
+    exit 1
+fi
+
+# Move the binary to the current directory
+mv "$BINARY" ./tunnel
+
+# Clean up extracted files and archive
+rm -rf tunnel-* "$ARCHIVE"
 
 # Ensure token and target URL are provided
 TOKEN=$1
