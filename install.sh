@@ -4,7 +4,7 @@
 set -e
 
 # Base URL of the GitHub release
-BASE_URL="https://github.com/TKV-LF/tunnel-client-binaries/releases/latest"
+BASE_URL="https://github.com/TKV-LF/tunnel-client-binaries/releases/latest/download"
 
 # Detect OS and architecture
 OS=$(uname | tr '[:upper:]' '[:lower:]')
@@ -39,20 +39,39 @@ ARCHIVE="source-code.tar.gz"
 echo "Downloading the binary archive..."
 curl -sSL "${BASE_URL}/${ARCHIVE}" -o "${ARCHIVE}"
 
-# Debugging: Check the downloaded file
-echo "Downloaded file: ${ARCHIVE}"
-ls -l "${ARCHIVE}"
+# Extract the archive
+echo "Extracting the archive..."
+tar -xzf "${ARCHIVE}"
 
-# Check if the file exists and is non-empty
-if [[ ! -s "${ARCHIVE}" ]]; then
-    echo "Error: Archive file is empty or not found. Check your URL or release assets."
+# Determine the binary name
+BINARY="tunnel-${OS}-${ARCH}"
+if [[ "$OS" == "windows" ]]; then
+    BINARY="${BINARY}.exe"
+fi
+
+# Verify the binary exists
+if [[ ! -f "$BINARY" ]]; then
+    echo "Binary not found for your platform: ${BINARY}"
     exit 1
 fi
 
-# Attempt to extract the archive
-echo "Extracting the archive..."
-tar -xzf "${ARCHIVE}" || { echo "Failed to extract archive. Debugging its contents..."; file "${ARCHIVE}"; exit 1; }
+# Move the binary to the current directory
+mv "$BINARY" ./tunnel
 
-# List extracted files for debugging
-echo "Extracted files:"
-ls -l
+# Clean up extracted files and archive
+rm -rf tunnel-* "$ARCHIVE"
+
+# Ensure token and target URL are provided
+TOKEN=$1
+TARGET_URL=$2
+if [[ -z "$TOKEN" || -z "$TARGET_URL" ]]; then
+    echo "Usage: curl -sSL <install.sh URL> | bash -s <token> <target_url>"
+    exit 1
+fi
+
+# Ensure the binary is executable
+chmod +x tunnel
+
+# Run the binary
+echo "Running the tunnel..."
+./tunnel -token "$TOKEN" -t "$TARGET_URL"
