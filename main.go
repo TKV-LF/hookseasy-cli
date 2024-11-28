@@ -44,9 +44,11 @@ func main() {
 		fmt.Println(err)
 		log.Fatal("Error 1")
 	}
-
+	
 	client := httputil.NewClientConn(conn, bufio.NewReader(conn)) // create HTTP request (can be hijacked)
 	log.Printf("token=%s", *token)
+	log.Printf("It's just a test")
+	return
 	form_data := bytes.NewBuffer([]byte(fmt.Sprintf("token=%s", *token)))
 	req, err := http.NewRequest("POST", "/", form_data)
 	if err != nil {
