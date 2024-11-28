@@ -35,11 +35,11 @@ TOKEN=""
 URL=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --token)
+    --t)
       TOKEN="$2"
       shift 2
       ;;
-    --r)
+    --h)
       URL="$2"
       shift 2
       ;;
@@ -51,7 +51,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$TOKEN" || -z "$URL" ]]; then
-  echo "Usage: $0 --token <TOKEN> --r <URL>"
+  echo "Usage: $0 --t <TOKEN> --h <URL>"
   exit 1
 fi
 
@@ -77,5 +77,5 @@ fi
 chmod +x "${BINARY_NAME}"
 
 # Run the binary with the provided arguments
-echo "Running the binary with --token and --r..."
-./${BINARY_NAME} --token="${TOKEN}" --r="${URL}"
+echo "Running the binary with --t and --h..."
+./${BINARY_NAME} --t="${TOKEN}" --h="${URL}"

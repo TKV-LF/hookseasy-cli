@@ -16,16 +16,23 @@ import (
 )
 
 func main() {
-	var host = flag.String("h", "host.tunnel.true-cdn.com", "server hostname to use")
+	var host = flag.String("host", "tunnel-register.hookseasy.com", "server hostname to use")
 	var port = flag.String("p", "443", "server port to use")
 
 	// server args
-	var token = flag.String("token", "trueplatform", "token to identify the user")
-	var target_host = flag.String("t", "", "Target host into which the webhook goes")
-	var is_http = flag.Bool("http", false, "")
-	var reserve_subdomain = flag.String("r", "", "Target host into which the webhook goes")
+	var token = flag.String("t", "", "token to identify the user")
+	var target_host = flag.String("h", "", "Target host into which the webhook goes")
+	var is_https = flag.Bool("https", false, "")
 	var cookie = flag.String("cookie", "", "Set cookie")
 	flag.Parse()
+
+	if *token == "" {
+		log.Fatal("Token is required. Use -t flag to input your token.")
+	}
+
+	if *target_host == "" {
+		log.Fatal("Target host is required. Use -h flag to input your target host at you local.\nFor example: -h localhost:8080")
+	}
 
 	// client usage: groktunnel [-h=<server hostname>] <local port>
 
@@ -34,14 +41,16 @@ func main() {
 	}
 	conn, err := tls.Dial("tcp", net.JoinHostPort(*host, *port), conf) // connect to server
 	if err != nil {
-		log.Fatal("Error 2")
+		fmt.Println(err)
+		log.Fatal("Error 1")
 	}
 
 	client := httputil.NewClientConn(conn, bufio.NewReader(conn)) // create HTTP request (can be hijacked)
-	log.Printf("reserve=%s&token=%s", *reserve_subdomain, *token)
-	form_data := bytes.NewBuffer([]byte(fmt.Sprintf("reserve=%s&token=%s", *reserve_subdomain, *token)))
+	log.Printf("token=%s", *token)
+	form_data := bytes.NewBuffer([]byte(fmt.Sprintf("token=%s", *token)))
 	req, err := http.NewRequest("POST", "/", form_data)
 	if err != nil {
+		fmt.Println(err)
 		log.Fatal("Error 2")
 	}
 
@@ -68,16 +77,17 @@ func main() {
 		ch, err := sess.Accept()
 
 		var conn net.Conn
-		if *is_http {
-			log.Printf(*target_host)
+		if *is_https {
 			conn, err = tls.Dial("tcp", *target_host+":https", conf)
 			if err != nil {
-				log.Fatal("Error 2")
+				fmt.Println(err)
+				log.Fatal("Error 3")
 			}
 		} else {
 			conn, err = net.Dial("tcp", *target_host)
 			if err != nil {
-				log.Fatal("Error 3")
+				fmt.Println(err)
+				log.Fatal("Error 4")
 			}
 		}
 
