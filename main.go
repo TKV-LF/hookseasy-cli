@@ -57,7 +57,7 @@ func main() {
 	req.Header = map[string][]string{
 		"Content-Type": {"application/x-www-form-urlencoded"},
 	}
-	req.Host = net.JoinHostPort(*host, *port)
+	req.Host = *host
 	client.Write(req)
 
 	resp, _ := client.Read(req)
