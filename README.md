@@ -1,6 +1,6 @@
 # HooksEasy Localhost CLI at https://hookseasy.com/
 
-<img alt="hookseasy logo" src="https://github.com/TKV-LF/tunnel-client-binaries/assets/logo.svg" width="20%" align="right"/>
+<img alt="hookseasy logo" src="https://github.com/TKV-LF/tunnel-client-binaries/blob/main/assets/logo.svg" width="20%" align="right"/>
 
 > This is a CLI tool for https;//hookseasy.com to connect your localhost to HooksEasy server, so that you can *receive your webhooks locally*.
 
